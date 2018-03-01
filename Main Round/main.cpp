@@ -1,22 +1,35 @@
-
+#include <string>
 #include <fstream>
 
-int R, C, F, N, B, T, a, b, x, y , s, f;
+int R, C, F, N, B, T;
 
 using namespace std;
 
+struct Viaje{
+public:
+    unsigned int a;
+    unsigned int b;
+    unsigned int x;
+    unsigned int y;
+	unsigned int s;
+	unsigned int f;
+};
+
+static list<Viaje> viajes;
+
 void load_data(const char path[]){
-	char endline;
+	string endline;
     ifstream myfile;
     myfile.open (path);
     if(myfile.is_open()){
         myfile >> R >> C >> F >> N >> B >> T;
 		getline(myfile, endline);
+		Viaje Aux;
 
-        for(int i = 0; i < problem_data.MAX_R ; i++){
-            char intermedio[1008]; //Evita desbordar PIZZA[i] con el null final
-            myfile >> intermedio;
-            strncpy(problem_data.PIZZA[i], intermedio, problem_data.MAX_C);
+        for(int i = 0; i < N; i++){
+			myfile >> Aux.a >> Aux.b >> Aux.x >> Aux.y >> Aux.s >> Aux.f;
+			getline(myfile, endline);
+			viajes.push_back(Aux);
         }
     }
     myfile.close();
