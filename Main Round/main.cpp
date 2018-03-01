@@ -13,30 +13,30 @@ public:
     unsigned int b;
     unsigned int x;
     unsigned int y;
-	unsigned int s;
-	unsigned int f;
-	pair<int,int> inicio(){
-		return pair<int, int>(a,b);
-	};
-	pair<int,int> terminar(){
-		return pair<int, int>(x,y);
-	};
+    unsigned int s;
+    unsigned int f;
+    pair<int,int> inicio(){
+        return pair<int, int>(a,b);
+    };
+    pair<int,int> terminar(){
+        return pair<int, int>(x,y);
+    };
 
-	int muy_pronto (){
-		return s;
-	}
+    int muy_pronto (){
+        return s;
+    }
 
-	int muy_tarde (){
-		return f;
-	}
+    int muy_tarde (){
+        return f;
+    }
 };
 
-static list<Viaje> viajes;
+Viaje viajes[1000];
 
 
 struct coche{
 public:
-	int num_steps = 0;
+    int num_steps = 0;
     pair<int,int> p = pair<int,int>(0,0);
     void add_viaje(pair<int,int> inicio, pair<int,int> final, int muy_pronto, int muy_tarde){
         num_steps += obtenerDistancia(inicio,p);
@@ -71,21 +71,21 @@ public:
     }
 };
 list<int> solucion[1000];
-static list <coche> coches;
+coche coches[1000];
 
 void load_data(const char path[]){
-	string endline;
+    string endline;
     ifstream myfile;
     myfile.open (path);
     if(myfile.is_open()){
         myfile >> R >> C >> F >> N >> B >> T;
-		getline(myfile, endline);
-		Viaje Aux;
+        getline(myfile, endline);
+        Viaje Aux;
 
         for(int i = 0; i < N; i++){
-			myfile >> Aux.a >> Aux.b >> Aux.x >> Aux.y >> Aux.s >> Aux.f;
-			getline(myfile, endline);
-			viajes.push_back(Aux);
+            myfile >> Aux.a >> Aux.b >> Aux.x >> Aux.y >> Aux.s >> Aux.f;
+            getline(myfile, endline);
+            viajes[i]=Aux;
         }
     }
     myfile.close();
@@ -96,13 +96,15 @@ void save_output(const char path[]) {
     myfile.open(path);
     if (myfile.is_open()) {
         for (int i = 0; i < F; i++) {
-			if(solucion[i].empty()){;}
-			else{
-				myfile << solucion[i].size() << " ";
-				for (auto x: solucion[i]){
-					myfile << x << " ";
-				}
+            if(!solucion[i].empty()){
+                myfile << solucion[i].size() << " ";
+                for (auto x: solucion[i]){
+                    myfile << x << " ";
+                }
 				myfile << endl;
+            }
+			else{
+				myfile << 0 << endl;
 			}
         }
     }
@@ -110,19 +112,20 @@ void save_output(const char path[]) {
 }
 
 void algoritmo(){
-    for( auto i : viajes){
-        for (auto j : coches){
-            if(j.can_add(i.inicio(),i.terminar(),i.muy_pronto(),i.muy_tarde())){
-                j.add_viaje(i.inicio(),i.terminar(),i.muy_pronto(),i.muy_tarde());
+    for(int i = 0 ; i < N ; i++) {
+        for(int j = 0 ; j < F ; j++) {
+            if(coches[j].can_add(viajes[i].inicio(),viajes[i].terminar(),viajes[i].muy_pronto(),viajes[i].muy_tarde())){
+                coches[j].add_viaje(viajes[i].inicio(),viajes[i].terminar(),viajes[i].muy_pronto(),viajes[i].muy_tarde());
+                solucion[j].push_back(i);
+                break;
             }
         }
     }
 }
 
 int main() {
-
-    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/a_example.in");//"/home/abel/Escritorio/example.in"
-	algoritmo();
-    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/a_example.out");// "/home/abel/Escritorio/example.out"
+    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/b_should_be_easy.in");//"/home/abel/Escritorio/example.in"
+    algoritmo();
+    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/b_should_be_easy.out");// "/home/abel/Escritorio/example.out"
     return 0;
 }
