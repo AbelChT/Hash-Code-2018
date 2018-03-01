@@ -1,5 +1,7 @@
 #include <string>
 #include <fstream>
+#include <iostream>
+#include <list>
 
 int R, C, F, N, B, T;
 
@@ -16,6 +18,21 @@ public:
 };
 
 static list<Viaje> viajes;
+
+struct coche{
+public:
+    int num_steps = 0;
+    void add_viaje(pair<int,int> inicio, pair<int,int> final, int muy_pronto, int muy_tarde){
+
+    }
+    bool can_add (pair<int,int> inicio, pair<int,int> final, int muy_pronto, int muy_tarde){
+
+    }
+    int puntos_viaje(pair<int,int> inicio, pair<int,int> final, int muy_pronto, int muy_tarde){
+
+    }
+};
+list<int> solucion[1000];
 
 void load_data(const char path[]){
 	string endline;
@@ -35,13 +52,30 @@ void load_data(const char path[]){
     myfile.close();
 }
 
+void save_output(const char path[]) {
+    ofstream myfile;
+    myfile.open(path);
+    if (myfile.is_open()) {
+        for (int i = 0; i < F; i++) {
+			if(solucion[i].empty()){;}
+			else{
+				myfile << solucion[i].size() << " ";
+				for (auto x: solucion[i]){
+					myfile << x << " ";
+				}
+				myfile << endl;
+			}
+        }
+    }
+    myfile.close();
+}
+
 int main(int argc, const char* argv[]) {
     if(argc != 4){
 	return -1;
     }
 
     load_data(argv[1]);//"/home/abel/Escritorio/example.in"
-    algoritmo_n2(atoi(argv[2])); // 1000
     save_output(argv[3]);// "/home/abel/Escritorio/example.out"
     return 0;
 }
