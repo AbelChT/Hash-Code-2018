@@ -2,6 +2,9 @@
 /.idea/*
 /cmake-build-debug/*
 
+#Custom
+*.DS_Store
+
 # Prerequisites
 *.d
 
