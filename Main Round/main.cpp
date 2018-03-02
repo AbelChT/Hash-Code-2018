@@ -1,7 +1,8 @@
 #include <string>
 #include <fstream>
-#include <iostream>
 #include <list>
+#include <algorithm>
+#include <vector>
 
 int R, C, F, N, B, T;
 
@@ -15,28 +16,27 @@ public:
     unsigned int y;
     unsigned int s;
     unsigned int f;
-    pair<int,int> inicio(){
+    pair<int,int> inicio() const{
         return pair<int, int>(a,b);
     };
-    pair<int,int> terminar(){
+    pair<int,int> terminar() const {
         return pair<int, int>(x,y);
     };
 
-    int muy_pronto (){
+    int muy_pronto () const{
         return s;
     }
 
-    int muy_tarde (){
+    int muy_tarde () const{
         return f;
     }
 };
 
-Viaje viajes[1000];
-
+list<pair<Viaje,long>> viajes;
 
 struct coche{
 public:
-    int num_steps = 0;
+    long num_steps = 0;
     pair<int,int> p = pair<int,int>(0,0);
     void add_viaje(pair<int,int> inicio, pair<int,int> final, int muy_pronto, int muy_tarde){
         num_steps += obtenerDistancia(inicio,p);
@@ -55,7 +55,7 @@ public:
         num_steps2 += obtenerDistancia(inicio, final);
         return num_steps2<=muy_tarde;
     }
-    int puntos_viaje(pair<int,int> inicio, pair<int,int> final, int muy_pronto, int muy_tarde){
+    int puntos_viaje(const pair<int,int> inicio,const pair<int,int> final, int muy_pronto, int muy_tarde){
         int puntos = 0;
         if (this->can_add(inicio, final,muy_pronto, muy_tarde)) {
             int num_steps2 = num_steps+obtenerDistancia(inicio,p);
@@ -70,8 +70,9 @@ public:
         return abs(ini.first-end.first)+abs(ini.second-end.second);
     }
 };
-list<int> solucion[1000];
-coche coches[1000];
+list<long> solucion[10000];
+
+vector<pair<coche, long>> coches;
 
 void load_data(const char path[]){
     string endline;
@@ -85,7 +86,7 @@ void load_data(const char path[]){
         for(int i = 0; i < N; i++){
             myfile >> Aux.a >> Aux.b >> Aux.x >> Aux.y >> Aux.s >> Aux.f;
             getline(myfile, endline);
-            viajes[i]=Aux;
+            viajes.emplace_back(pair<Viaje,int >(Aux,i));
         }
     }
     myfile.close();
@@ -101,31 +102,72 @@ void save_output(const char path[]) {
                 for (auto x: solucion[i]){
                     myfile << x << " ";
                 }
-				myfile << endl;
+                myfile << endl;
             }
-			else{
-				myfile << 0 << endl;
-			}
+            else{
+                myfile << 0 << endl;
+            }
         }
     }
     myfile.close();
 }
 
+
+bool my_comparator_viajes(const pair<Viaje,int> &first, const pair<Viaje,int> &second) {
+    return first.first.inicio() > second.first.inicio();
+}
+
+/*bool my_comparator_coches(const pair<coche,int> &first, const pair<coche,int> &second, Viaje v) {
+    return first.first.puntos_viaje(v.inicio(),v.terminar(),v.muy_pronto(),v.muy_tarde()) > second.first.puntos_viaje(v.inicio(),v.terminar(),v.muy_pronto(),v.muy_tarde());
+}*/
+
+
 void algoritmo(){
-    for(int i = 0 ; i < N ; i++) {
-        for(int j = 0 ; j < F ; j++) {
-            if(coches[j].can_add(viajes[i].inicio(),viajes[i].terminar(),viajes[i].muy_pronto(),viajes[i].muy_tarde())){
-                coches[j].add_viaje(viajes[i].inicio(),viajes[i].terminar(),viajes[i].muy_pronto(),viajes[i].muy_tarde());
-                solucion[j].push_back(i);
-                break;
+    for(int i = 0; i < F; i++){
+        coche c;
+        auto sub = pair<coche, long>(c,i);
+        coches.emplace_back(sub);
+    }
+    viajes.sort(my_comparator_viajes);
+
+    for (auto i : viajes) {
+        long mejor = 1000000;
+        int mejor_k = 0;
+        for(int k =0 ; k < coches.size(); k++){
+            auto &j = coches[k];
+            if(j.first.can_add(i.first.inicio(),i.first.terminar(),i.first.muy_pronto(),i.first.muy_tarde())
+               && j.first.obtenerDistancia(j.first.p,i.first.inicio())< mejor){
+                mejor =j.first.puntos_viaje(i.first.inicio(),i.first.terminar(),i.first.muy_pronto(),i.first.muy_tarde());
+                mejor_k = k;
             }
         }
+
+        auto &j = coches[mejor_k];
+        j.first.add_viaje(i.first.inicio(),i.first.terminar(),i.first.muy_pronto(),i.first.muy_tarde());
+        solucion[j.second].push_back(i.second);
+
     }
 }
 
 int main() {
+    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/a_example.in");//"/home/abel/Escritorio/example.in"
+    algoritmo();
+    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/a_example.out");// "/home/abel/Escritorio/example.out"
+
     load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/b_should_be_easy.in");//"/home/abel/Escritorio/example.in"
     algoritmo();
-    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/b_should_be_easy.out");// "/home/abel/Escritorio/example.out"
+    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/b_should_be_easy.out");
+
+    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/c_no_hurry.in");//"/home/abel/Escritorio/example.in"
+    algoritmo();
+    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/c_no_hurry.out");
+
+    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/d_metropolis.in");//"/home/abel/Escritorio/example.in"
+    algoritmo();
+    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/d_metropolis.out");
+
+    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/e_high_bonus.in");//"/home/abel/Escritorio/example.in"
+    algoritmo();
+    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/e_high_bonus.out");
     return 0;
 }
