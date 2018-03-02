@@ -150,24 +150,9 @@ void algoritmo(){
 }
 
 int main() {
+    
     load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/a_example.in");//"/home/abel/Escritorio/example.in"
     algoritmo();
-    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/a_example.out");// "/home/abel/Escritorio/example.out"
-
-    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/b_should_be_easy.in");//"/home/abel/Escritorio/example.in"
-    algoritmo();
-    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/b_should_be_easy.out");
-
-    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/c_no_hurry.in");//"/home/abel/Escritorio/example.in"
-    algoritmo();
-    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/c_no_hurry.out");
-
-    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/d_metropolis.in");//"/home/abel/Escritorio/example.in"
-    algoritmo();
-    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/d_metropolis.out");
-
-    load_data("/Users/adrian/Desktop/Hash-Code-2018/Main Round/e_high_bonus.in");//"/home/abel/Escritorio/example.in"
-    algoritmo();
-    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/e_high_bonus.out");
+    save_output("/Users/adrian/Desktop/Hash-Code-2018/Main Round/a_example.out");// "/home/abel/Escritorio/example.out
     return 0;
 }
