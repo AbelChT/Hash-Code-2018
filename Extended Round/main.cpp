@@ -101,67 +101,65 @@ bool my_comparator_viajes(const pair<viaje, int> &first, const pair<viaje, int> 
 bool comparator_viajes_early(const pair<viaje, int> &first, const pair<viaje, int> &second) {
     return first.first.earliest_start() < second.first.earliest_start();
 }
+bool comparator_viajes_dist(const pair<viaje, int> &first, const pair<viaje, int> &second){
+    auto prim = obtener_distancia(first.first.start_intersection(), pair<int,int> (0,0));
+    if(prim < first.first.earliest_start()) prim = first.first.earliest_start();
 
-/*bool my_comparator_coches(const pair<coche,int> &first, const pair<coche,int> &second, Viaje v) {
-    return first.first.puntos_viaje(v.inicio(),v.terminar(),v.muy_pronto(),v.muy_tarde()) > second.first.puntos_viaje(v.inicio(),v.terminar(),v.muy_pronto(),v.muy_tarde());
-}*/
+    auto sec = obtener_distancia(second.first.start_intersection(), pair<int,int> (0,0));
+    if(sec < second.first.earliest_start()) sec = second.first.earliest_start();
 
-unsigned long heuristica_40(const coche &c, const viaje &v, const initial_data &problem_data) {
-    unsigned long tiempo_perdido = c.num_steps + obtener_distancia(c.p, v.start_intersection());
-    if (tiempo_perdido < v.earliest_start()) {
-        tiempo_perdido = v.earliest_start();
-    }
-
-    tiempo_perdido = tiempo_perdido - c.num_steps;
-    // tiempo_perdido = 20000000000L - tiempo_perdido;
-    unsigned long puntos_ganados = c.puntos_viaje(v, problem_data);
-    if (tiempo_perdido == 0) {
-        return 4 * puntos_ganados;
-    } else {
-        return 2 * puntos_ganados / tiempo_perdido;
-    }
+    return prim < sec;
 }
 
-// metropolis 1 18 7
+bool comparator_viajes_finish(const pair<viaje, int> &first, const pair<viaje, int> &second) {
+    return first.first.latest_finish() < second.first.latest_finish();
+}
+
+// metropolis 1 18 7 o 0.5 32 7
 // resto 128 32 8
-unsigned long heuristica_n(const coche &c, const viaje &v, const initial_data &problem_data) {
+// hight bonus 128 32 1
+unsigned long heuristica(const coche &c, const viaje &v, const initial_data &problem_data) {
     unsigned long tiempo_perdido = c.num_steps + obtener_distancia(c.p, v.start_intersection());
     int bonus = 1;
     if (tiempo_perdido < v.earliest_start()) {
         tiempo_perdido = v.earliest_start();
-        bonus = 1;
+        bonus = 128;
     }
 
     tiempo_perdido = tiempo_perdido - c.num_steps;
     // tiempo_perdido = 20000000000L - tiempo_perdido;
     unsigned long puntos_ganados = c.puntos_viaje(v, problem_data) * bonus;
+
     if (tiempo_perdido == 0) {
-        return 18 * puntos_ganados; // 8 4
+        return 32 * puntos_ganados; // 8 4
 
     }
     else {
-        return 7 * puntos_ganados / tiempo_perdido;
+        return 8 * puntos_ganados / tiempo_perdido;
     }
 }
 
-
-unsigned long heuristica_37(const coche &c, const viaje &v, const initial_data &problem_data) {
+// Con esta heuristica solo se obtienen las puntuaciones me metropolis
+unsigned long heuristica2(const coche &c, const viaje &v, const initial_data &problem_data) {
     unsigned long tiempo_perdido = c.num_steps + obtener_distancia(c.p, v.start_intersection());
+
     if (tiempo_perdido < v.earliest_start()) {
         tiempo_perdido = v.earliest_start();
+
     }
+
+    unsigned long tiempo_viaje = obtener_distancia(v.start_intersection(), v.finish_intersection());
 
     tiempo_perdido = tiempo_perdido - c.num_steps;
     // tiempo_perdido = 20000000000L - tiempo_perdido;
-    unsigned long puntos_ganados = c.puntos_viaje(v, problem_data);
-    return puntos_ganados;
-
+    unsigned long puntos_ganados = c.puntos_viaje(v, problem_data) ;
+    if(puntos_ganados == 0)
+      return 0;
+    else{
+      return 70000000 - 7 * tiempo_perdido - tiempo_viaje;
+    }
 }
 
-
-unsigned long heuristica(const coche &c, const viaje &v, const initial_data &problem_data) {
-    return heuristica_n(c, v, problem_data);
-}
 
 void algoritmo(initial_data &problem_data, solution_data &solucion) {
     list<pair<viaje, unsigned int>> viajes;
@@ -169,48 +167,58 @@ void algoritmo(initial_data &problem_data, solution_data &solucion) {
         viajes.emplace_back(pair<viaje, unsigned int>(problem_data.viajes[i], i));
     }
 
-    unsigned int coche_actual = 0;
+    list<pair<coche, unsigned int>> coches;
+    for (unsigned int i = 0; i < problem_data.number_of_vehicles_in_the_fleet(); i++) {
+        coches.emplace_back(pair<coche, unsigned int>(coche(), i));
+    }
 
-    while (!viajes.empty() && coche_actual < problem_data.number_of_vehicles_in_the_fleet()) {
-        coche c;
-        viajes.sort(comparator_viajes_early);
-        auto front_data = viajes.front();
-        viajes.pop_front();
-        if (c.can_add(front_data.first, problem_data)) {
-            c.add_viaje(front_data.first, problem_data);
-            solucion.solucion[coche_actual].emplace_back(front_data.second);
+    viajes.sort(comparator_viajes_early);
 
-            unsigned long mejor_heuristica = 0;
+    while (!viajes.empty() && !coches.empty()) {
+        auto mejor_heuristica_coche = coches.end();
+        auto mejor_heuristica_viaje = viajes.end();
+        auto mejor_heuristica = 0L;
 
-            do {
-                mejor_heuristica = 0;
-                list<pair<viaje, unsigned int>>::iterator it_mejor;
+        for (auto it_coches = coches.begin(); it_coches != coches.end();) {
 
-                for (auto it = viajes.begin(); it != viajes.end(); it++) {
-                    if (mejor_heuristica < heuristica(c, it->first, problem_data)) {
-                        mejor_heuristica = heuristica(c, it->first, problem_data);
-                        it_mejor = it;
-                    }
+            auto mejor_heuristica_local = 0L;
+            auto it_mejor = viajes.end();
+            for (auto it_viajes = viajes.begin() ; it_viajes != viajes.end(); ++it_viajes) {
+                if (mejor_heuristica_local < heuristica(it_coches ->first, it_viajes->first, problem_data)) {
+                    mejor_heuristica_local = heuristica(it_coches ->first, it_viajes->first, problem_data);
+                    it_mejor = it_viajes;
                 }
+            }
 
-                if (mejor_heuristica != 0) {
-                    solucion.solucion[coche_actual].emplace_back(it_mejor->second);
-                    c.add_viaje(it_mejor->first, problem_data);
-                    viajes.erase(it_mejor);
+            if (mejor_heuristica_local != 0) {
+                if(mejor_heuristica < mejor_heuristica_local){
+                    mejor_heuristica = mejor_heuristica_local;
+                    mejor_heuristica_coche = it_coches;
+                    mejor_heuristica_viaje = it_mejor;
                 }
-
-            } while (mejor_heuristica != 0);
+                ++it_coches;
+            }else{
+                //se elimina el coche de la lista ya que no tiene ningun viaje posible
+                it_coches = coches.erase(it_coches);
+            }
         }
-        ++coche_actual;
+
+        if (mejor_heuristica != 0) {
+            solucion.solucion[mejor_heuristica_coche ->second].emplace_back(mejor_heuristica_viaje->second);
+            mejor_heuristica_coche ->first.add_viaje(mejor_heuristica_viaje->first, problem_data);
+            viajes.erase(mejor_heuristica_viaje);
+        }
+
+        cout << "Viajes: " << viajes.size() << " coches: " << coches.size() << endl;
     }
 }
-
 
 initial_data load_data(const char path[]) {
     initial_data problem_data;
     string endline;
     ifstream myfile;
     myfile.open(path);
+
     if (myfile.is_open()) {
         myfile >> problem_data.R >> problem_data.C >> problem_data.F >> problem_data.N >> problem_data.B
                >> problem_data.T;
@@ -284,10 +292,11 @@ int main() {
     save_output("/home/abel/Descargas/c_no_hurry.out", data_set_3, soluciones[2]);
     puntuacion += comprobar_solucion(data_set_3, soluciones[2], "c_no_hurry");
 
-    auto data_set_4 = load_data("/home/abel/Descargas/d_metropolis.in");//"/home/abel/Escritorio/example.in"ç
-    algoritmo(data_set_4, soluciones[3]);
-    save_output("/home/abel/Descargas/d_metropolis.out", data_set_4, soluciones[3]);
-    puntuacion += comprobar_solucion(data_set_4, soluciones[3], "d_metropolis");
+    //auto data_set_4 = load_data("/home/abel/Descargas/d_metropolis.in");//"/home/abel/Escritorio/example.in"ç
+    //algoritmo(data_set_4, soluciones[3]);
+    //save_output("/home/abel/Descargas/d_metropolis.out", data_set_4, soluciones[3]);
+    //puntuacion += comprobar_solucion(data_set_4, soluciones[3], "d_metropolis");
+
 
     auto data_set_5 = load_data("/home/abel/Descargas/e_high_bonus.in");//"/home/abel/Escritorio/example.in"ç
     algoritmo(data_set_5, soluciones[4]);
